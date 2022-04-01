@@ -1,3 +1,6 @@
 ---
  github_user: "your_github_user_name"
  github_token: "your_github_personal_access_token"
+ account_info:
+  name: "name_defined_in_github_account"
+  bio: "biography_defined_in_github_account"
