@@ -6,7 +6,7 @@ import time
 from pytest_bdd import scenario, given, when, then
 from pytest_bdd import parsers
 from pathlib import Path
-from utils.utilities import get_config, create_file_and_return_its_path, get_file_content_base64
+from utils.utilities import create_file_and_return_its_path, get_file_content_base64
 from utils.auth import BasicAuth
 
 feature_file_dir = "../features/api"
@@ -31,10 +31,9 @@ def auth_github_basic(context):
     response = context["BasicAuth"].session.get("https://api.github.com/users/" + context["github_user"])
 
     assert response.status_code == 200
-    assert response.json()['login'] == 'sdfast'
-    assert response.json()['url'] == 'https://api.github.com/users/' + context["github_user"]
-    assert response.json()['name'] == 'Pawel'
-    assert response.json()['bio'] == 'QA Automation Engineer'
+    assert response.json()['login'] == context["github_user"]
+    assert response.json()['name'] == context["account_info"]["name"]
+    assert response.json()['bio'] == context["account_info"]["bio"]
 
 
 @when(parsers.parse('user creates repository with name "{repo_name}"'))
@@ -52,11 +51,10 @@ def create_repository(repo_name, context):
              "auto_init": True}
         )
     )
+    context["base_url"] = "https://api.github.com/repos/" + context["github_user"] + "/" + context["repo_name"]
 
     assert post_response.status_code == 201
-    assert post_response.json()['url'] == "https://api.github.com/repos/" + context["github_user"] + "/" + repo_name
-
-    context["base_url"] = "https://api.github.com/repos/" + context["github_user"] + "/" + context["repo_name"]
+    assert post_response.json()['url'] == context["base_url"]
 
 
 @when(parsers.parse('user creates branch "{branch_name}"'))
@@ -73,13 +71,17 @@ def create_branch(context, branch_name):
 
     context['last_tree_sha'] = branches[-1]['object']['sha']
 
-    payload = json.dumps({"ref": "refs/heads/" + context["branch_name"],
-                          "sha": context['last_tree_sha']})
+    payload = json.dumps(
+        {
+            "ref": "refs/heads/" + context["branch_name"],
+            "sha": context['last_tree_sha']
+        }
+    )
 
     create_branch_response = context["BasicAuth"].session.post(
         url=context["base_url"] + "/git/refs", data=payload)
 
-    assert create_branch_response.status_code == 201
+    assert create_branch_response.status_code == 201, f"Response: {create_branch_response.text}"
 
     list_branches_response = context["BasicAuth"].session.get(context["base_url"] + "/branches")
 
@@ -158,8 +160,16 @@ def commits_match_length_and_pattern(context, char_limit, pattern):
         commits_urls.append(branch["commit"]["url"])
 
     commits_messages = []
+    initial_commit_count = 0
     for url in commits_urls:
-        commits_messages.append(context["BasicAuth"].session.get(url=url).json()["commit"]["message"])
+        message = context["BasicAuth"].session.get(url=url).json()["commit"]["message"]
+        if message == "Initial commit":
+            initial_commit_count += 1
+
+        if message != "Initial commit":
+            commits_messages.append(message)
+
+    assert initial_commit_count == 1, f"There should be only '1' but are {initial_commit_count}"
 
     validation_results = []
     for message in commits_messages:
@@ -170,4 +180,4 @@ def commits_match_length_and_pattern(context, char_limit, pattern):
 
     test_result_df = pd.DataFrame(validation_results, columns=['message', 'validation_success'])
 
-    assert test_result_df['validation_success'] is not False
+    assert (False in set(test_result_df['validation_success'])) is False
