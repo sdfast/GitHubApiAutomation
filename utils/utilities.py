@@ -12,12 +12,12 @@ def get_config(file_path) -> dict:
 
 def create_file_and_return_its_path() -> dict:
     content_root_file_path = 'resources/file.txt'
+    file_dir = content_root_file_path.split("/")[0]
     file_name = content_root_file_path.split("/")[-1]
     try:
-        os.mkdir(content_root_file_path.split("/")[0])
-        print("content_root_file_path_split:", content_root_file_path.split("/")[0])
+        os.mkdir(file_dir)
     except FileExistsError:
-        print("File already exists")
+        print(f"Directory: '{file_dir}' already exists")
 
     try:
         with open(content_root_file_path, 'xt+', encoding="utf-8") as output_file:
