@@ -1,6 +1,6 @@
 Feature: Github API Automation
 
-  Scenario: Github Flow
+  Scenario: Test Github Flow
     Given user logs in to GitHub using basic authentication
     When user creates repository with name "git_flow_first_task"
     And user creates branch "feature/git_flow_feature"

@@ -1,6 +1,7 @@
 ---
- github_user: "your_github_user_name"
- github_token: "your_github_personal_access_token"
- account_info:
-  name: "name_defined_in_github_account"
-  bio: "biography_defined_in_github_account"
+base_api_url: "https://api.githubenteprise.com"
+github_user: "sdfast"
+github_token: "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"
+account_info:
+  name: "Pawel"
+  bio: "QA Automation Engineer"

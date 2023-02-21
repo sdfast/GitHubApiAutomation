@@ -27,8 +27,8 @@ def auth_github_basic(context):
         user=context["github_user"],
         token=context["github_token"]
     )
-
-    response = context["BasicAuth"].session.get("https://api.github.com/users/" + context["github_user"])
+    base_api_url = context["base_api_url"]
+    response = context["BasicAuth"].session.get(f"{base_api_url}/users/" + context["github_user"])
 
     assert response.status_code == 200
     assert response.json()['login'] == context["github_user"]
@@ -36,6 +36,7 @@ def auth_github_basic(context):
     assert response.json()['bio'] == context["account_info"]["bio"]
 
 
+@given(parsers.parse('user creates repository with name "{repo_name}"'))
 @when(parsers.parse('user creates repository with name "{repo_name}"'))
 def create_repository(repo_name, context):
     context["repo_name"] = repo_name
@@ -44,7 +45,7 @@ def create_repository(repo_name, context):
          "Accept": "application/vnd.github.v3+json"}
     )
 
-    post_response = context["BasicAuth"].session.post(
+    create_repo_response = context["BasicAuth"].session.post(
         url="https://api.github.com/user/repos",
         data=json.dumps(
             {"name": repo_name,
@@ -53,8 +54,12 @@ def create_repository(repo_name, context):
     )
     context["base_url"] = "https://api.github.com/repos/" + context["github_user"] + "/" + context["repo_name"]
 
-    assert post_response.status_code == 201
-    assert post_response.json()['url'] == context["base_url"]
+    assert create_repo_response.status_code == 201
+    assert create_repo_response.json()['url'] == context["base_url"]
+
+    get_repo_response = context["BasicAuth"].session.get(url=context["base_url"])
+
+    assert get_repo_response.status_code == 200
 
 
 @when(parsers.parse('user creates branch "{branch_name}"'))
